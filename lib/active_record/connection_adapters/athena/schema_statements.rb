@@ -13,13 +13,32 @@ module ActiveRecord
         end
 
         def columns(table_name)
-          query = "DESCRIBE #{quote_table_name(table_name)}"
+          # Athena doesn't support quoted table names in DESCRIBE
+          query = "DESCRIBE #{table_name}"
           result = execute(query)
           
-          result[:rows].map do |row|
+          columns = []
+          
+          result[:rows].each do |row|
             data = row[:data]
-            column_name = data[0][:var_char_value]
-            column_type = data[1][:var_char_value]
+            
+            # Skip empty rows or rows with insufficient data
+            next if data.nil? || data.length < 2
+            
+            # Get the first column value (potential column name)
+            first_col = data[0][:var_char_value]
+            
+            # Skip header rows and comments (lines starting with #)
+            next if first_col.nil? || first_col.start_with?('#') || first_col.strip.empty?
+            
+            # Skip the header row that contains "col_name"
+            next if first_col == "col_name"
+            
+            # Skip partition spec section
+            next if first_col == "field_name"
+            
+            column_name = first_col.strip
+            column_type = data[1][:var_char_value].strip
             
             sql_type = column_type
             type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(
@@ -27,13 +46,15 @@ module ActiveRecord
               type: lookup_cast_type_symbol(sql_type)
             )
             
-            ConnectionAdapters::Column.new(
+            columns << ConnectionAdapters::Column.new(
               column_name,
               nil, # default value
               type_metadata,
               true # nullable - Athena columns are typically nullable
             )
           end
+          
+          columns
         end
 
         def column_exists?(table_name, column_name, type = nil, **options)
@@ -47,7 +68,8 @@ module ActiveRecord
         end
 
         def drop_table(table_name, **options)
-          execute("DROP TABLE #{quote_table_name(table_name)}")
+          # Athena may not support quoted table names in DROP TABLE
+          execute("DROP TABLE #{table_name}")
         end
 
         def rename_table(table_name, new_name)

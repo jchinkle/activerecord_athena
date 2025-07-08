@@ -81,4 +81,62 @@ RSpec.describe ActiveRecord::ConnectionAdapters::Athena::SchemaStatements do
       expect(adapter.foreign_keys("test_table")).to eq([])
     end
   end
+
+  describe "#columns" do
+    it "parses Athena DESCRIBE output correctly" do
+      # Mock the actual format that Athena returns
+      athena_describe_result = {
+        rows: [
+          { data: [{ var_char_value: "# Table schema:" }] },
+          { data: [{ var_char_value: "# col_name" }, { var_char_value: "data_type" }, { var_char_value: "comment" }] },
+          { data: [{ var_char_value: "col_name" }, { var_char_value: "data_type" }, { var_char_value: "comment" }] },
+          { data: [{ var_char_value: "id" }, { var_char_value: "bigint" }, { var_char_value: "" }] },
+          { data: [{ var_char_value: "name" }, { var_char_value: "string" }, { var_char_value: "" }] },
+          { data: [{ var_char_value: "active" }, { var_char_value: "boolean" }, { var_char_value: "" }] },
+          { data: [{ var_char_value: "" }] },
+          { data: [{ var_char_value: "# Partition spec:" }] },
+          { data: [{ var_char_value: "# field_name" }, { var_char_value: "field_transform" }, { var_char_value: "column_name" }] },
+          { data: [{ var_char_value: "field_name" }, { var_char_value: "field_transform" }, { var_char_value: "column_name" }] }
+        ]
+      }
+      
+      allow(adapter).to receive(:execute).with("DESCRIBE test_table").and_return(athena_describe_result)
+      
+      columns = adapter.columns("test_table")
+      
+      expect(columns.length).to eq(3)
+      
+      expect(columns[0].name).to eq("id")
+      expect(columns[0].sql_type).to eq("bigint")
+      
+      expect(columns[1].name).to eq("name")
+      expect(columns[1].sql_type).to eq("string")
+      
+      expect(columns[2].name).to eq("active")
+      expect(columns[2].sql_type).to eq("boolean")
+    end
+
+    it "handles empty DESCRIBE result" do
+      empty_result = { rows: [] }
+      allow(adapter).to receive(:execute).with("DESCRIBE empty_table").and_return(empty_result)
+      
+      columns = adapter.columns("empty_table")
+      expect(columns).to eq([])
+    end
+
+    it "handles DESCRIBE result with only header rows" do
+      header_only_result = {
+        rows: [
+          { data: [{ var_char_value: "# Table schema:" }] },
+          { data: [{ var_char_value: "# col_name" }, { var_char_value: "data_type" }, { var_char_value: "comment" }] },
+          { data: [{ var_char_value: "col_name" }, { var_char_value: "data_type" }, { var_char_value: "comment" }] }
+        ]
+      }
+      
+      allow(adapter).to receive(:execute).with("DESCRIBE header_table").and_return(header_only_result)
+      
+      columns = adapter.columns("header_table")
+      expect(columns).to eq([])
+    end
+  end
 end

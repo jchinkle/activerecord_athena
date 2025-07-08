@@ -52,6 +52,22 @@ RSpec.describe "Query Execution" do
       result = adapter.send(:substitute_binds, sql, binds)
       expect(result).to eq("SELECT * FROM users WHERE id = 123 AND name = ?")
     end
+
+    it "handles LIMIT ? with no binds by using default limit" do
+      sql = "SELECT * FROM users LIMIT ?"
+      binds = []
+      
+      result = adapter.send(:substitute_binds, sql, binds)
+      expect(result).to eq("SELECT * FROM users LIMIT 1000")
+    end
+
+    it "handles multiple ? placeholders with no binds" do
+      sql = "SELECT * FROM users WHERE id = ? LIMIT ?"
+      binds = []
+      
+      result = adapter.send(:substitute_binds, sql, binds)
+      expect(result).to eq("SELECT * FROM users WHERE id = ? LIMIT 1000")
+    end
   end
 
   describe "#quote" do
