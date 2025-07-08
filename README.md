@@ -30,10 +30,11 @@ development:
   database: your_athena_database
   s3_output_location: s3://your-bucket/query-results/
   work_group: primary
-  aws_config:
-    region: us-east-1
-    access_key_id: <%= ENV['AWS_ACCESS_KEY_ID'] %>
-    secret_access_key: <%= ENV['AWS_SECRET_ACCESS_KEY'] %>
+  connection_options:
+    aws_config:
+      region: us-east-1
+      access_key_id: <%= ENV['AWS_ACCESS_KEY_ID'] %>
+      secret_access_key: <%= ENV['AWS_SECRET_ACCESS_KEY'] %>
 ```
 
 ### Basic Usage
