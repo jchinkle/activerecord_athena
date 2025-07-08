@@ -105,7 +105,9 @@ module ActiveRecord
 
       def exec_query(sql, name = "SQL", binds = [], **kwargs)
         log(sql, name) do
-          result = execute_query(sql)
+          # Replace parameter placeholders with actual values
+          prepared_sql = substitute_binds(sql, binds)
+          result = execute_query(prepared_sql)
           
           if result[:rows].any?
             columns = result[:column_info].map { |col| col[:name] }
@@ -135,6 +137,46 @@ module ActiveRecord
 
       def aws_config
         @connection_options[:aws_config] || {}
+      end
+
+      def substitute_binds(sql, binds)
+        return sql if binds.empty?
+        
+        # Replace ? placeholders with actual values
+        bind_index = 0
+        sql.gsub('?') do
+          if bind_index < binds.length
+            bind = binds[bind_index]
+            bind_index += 1
+            
+            # Handle different types of bind values
+            value = bind.respond_to?(:value) ? bind.value : bind
+            quote(value)
+          else
+            '?'
+          end
+        end
+      end
+
+      def quote(value)
+        case value
+        when String
+          "'#{value.gsub("'", "''")}'"
+        when Integer, Float
+          value.to_s
+        when true
+          'true'
+        when false
+          'false'
+        when nil
+          'NULL'
+        when Date
+          "'#{value.strftime('%Y-%m-%d')}'"
+        when Time, DateTime
+          "'#{value.strftime('%Y-%m-%d %H:%M:%S')}'"
+        else
+          "'#{value.to_s.gsub("'", "''")}'"
+        end
       end
 
       def execute_query(sql)
