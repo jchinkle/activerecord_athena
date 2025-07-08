@@ -1,0 +1,38 @@
+# Gem build artifacts
+*.gem
+*.rbc
+pkg/
+Gemfile.lock
+
+# Ruby/Rails specific
+.bundle/
+vendor/bundle
+.ruby-version
+.rbenv-version
+.rvmrc
+
+# Editor files
+*.swp
+*.swo
+*~
+.DS_Store
+.vscode/
+.idea/
+
+# Test coverage
+coverage/
+.coverage
+.simplecov
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
+
+# OS generated files
+Thumbs.db
+.DS_Store?
+ehthumbs.db
+Icon?
