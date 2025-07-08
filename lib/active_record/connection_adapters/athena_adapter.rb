@@ -103,7 +103,7 @@ module ActiveRecord
         end
       end
 
-      def exec_query(sql, name = "SQL", binds = [], prepare: false)
+      def exec_query(sql, name = "SQL", binds = [], **kwargs)
         log(sql, name) do
           result = execute_query(sql)
           
@@ -118,7 +118,7 @@ module ActiveRecord
         end
       end
 
-      def select_all(arel, name = nil, binds = [])
+      def select_all(arel, name = nil, binds = [], **kwargs)
         sql = to_sql(arel, binds)
         exec_query(sql, name, binds)
       end
