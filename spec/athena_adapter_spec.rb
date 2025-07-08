@@ -6,22 +6,19 @@ RSpec.describe ActiveRecord::ConnectionAdapters::AthenaAdapter do
       adapter: "athena",
       database: "test_database",
       s3_output_location: "s3://test-bucket/query-results/",
-      work_group: "primary"
-    }
-  end
-
-  let(:connection_options) do
-    {
-      aws_config: {
-        region: "us-east-1",
-        access_key_id: "test_key",
-        secret_access_key: "test_secret"
+      work_group: "primary",
+      connection_options: {
+        aws_config: {
+          region: "us-east-1",
+          access_key_id: "test_key",
+          secret_access_key: "test_secret"
+        }
       }
     }
   end
 
   subject(:adapter) do
-    described_class.new(nil, nil, connection_options, config)
+    described_class.new(config)
   end
 
   describe "#adapter_name" do

@@ -10,9 +10,9 @@ module ActiveRecord
       include Athena::SchemaStatements
       ADAPTER_NAME = "Athena"
 
-      def initialize(connection, logger, connection_options, config)
-        super(connection, logger, config)
-        @connection_options = connection_options
+      def initialize(config)
+        super(config)
+        @connection_options = config[:connection_options] || {}
         @database = config[:database]
         @s3_output_location = config[:s3_output_location]
         @work_group = config[:work_group] || "primary"
@@ -126,11 +126,15 @@ module ActiveRecord
       private
 
       def athena_client
-        @athena_client ||= Aws::Athena::Client.new(@connection_options[:aws_config] || {})
+        @athena_client ||= Aws::Athena::Client.new(aws_config)
       end
 
       def s3_client
-        @s3_client ||= Aws::S3::Client.new(@connection_options[:aws_config] || {})
+        @s3_client ||= Aws::S3::Client.new(aws_config)
+      end
+
+      def aws_config
+        @connection_options[:aws_config] || {}
       end
 
       def execute_query(sql)
