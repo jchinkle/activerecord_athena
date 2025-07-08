@@ -63,6 +63,14 @@ module ActiveRecord
         true
       end
 
+      def supports_statement_cache?
+        true
+      end
+
+      def supports_lazy_transactions?
+        false
+      end
+
       def native_database_types
         {
           primary_key: "string",
@@ -107,19 +115,19 @@ module ActiveRecord
         log(sql, name) do
           # Replace parameter placeholders with actual values
           prepared_sql = substitute_binds(sql, binds)
-          result = execute_query(prepared_sql)
-          
-          if result[:rows].any?
-            columns = result[:column_info].map { |col| col[:name] }
-            raw_rows = result[:rows].map { |row| row[:data].map { |cell| cell[:var_char_value] } }
-            
+          query_result = execute_query(prepared_sql)
+
+          if query_result[:rows].any?
+            columns = query_result[:column_info].map { |col| col[:name] }
+            raw_rows = query_result[:rows].map { |row| row[:data].map { |cell| cell[:var_char_value] } }
+
             # Filter out header row if it matches column names
             # The first row is often the header row in Athena results
             data_rows = raw_rows
             if raw_rows.first && raw_rows.first == columns
               data_rows = raw_rows.drop(1)
             end
-            
+
             ActiveRecord::Result.new(columns, data_rows)
           else
             ActiveRecord::Result.new([], [])
@@ -155,16 +163,16 @@ module ActiveRecord
           sql = sql.gsub(/LIMIT \?/, 'LIMIT 1000')
           return sql
         end
-        
+
         return sql if binds.empty?
-        
+
         # Replace ? placeholders with actual values
         bind_index = 0
         sql.gsub('?') do
           if bind_index < binds.length
             bind = binds[bind_index]
             bind_index += 1
-            
+
             # Handle different types of bind values
             value = bind.respond_to?(:value) ? bind.value : bind
             quote(value)
@@ -212,7 +220,7 @@ module ActiveRecord
           },
           work_group: @work_group
         })
-        
+
         response.query_execution_id
       end
 
@@ -221,9 +229,9 @@ module ActiveRecord
           response = athena_client.get_query_execution({
             query_execution_id: query_execution_id
           })
-          
+
           status = response.query_execution.status.state
-          
+
           case status
           when "SUCCEEDED"
             break
@@ -239,7 +247,7 @@ module ActiveRecord
         response = athena_client.get_query_results({
           query_execution_id: query_execution_id
         })
-        
+
         {
           column_info: response.result_set.result_set_metadata.column_info,
           rows: response.result_set.rows

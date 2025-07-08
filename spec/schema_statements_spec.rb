@@ -100,6 +100,8 @@ RSpec.describe ActiveRecord::ConnectionAdapters::Athena::SchemaStatements do
         ]
       }
       
+      # Mock schema cache to avoid issues
+      allow(adapter).to receive(:schema_cache).and_return(nil)
       allow(adapter).to receive(:execute).with("DESCRIBE test_table").and_return(athena_describe_result)
       
       columns = adapter.columns("test_table")
@@ -118,6 +120,7 @@ RSpec.describe ActiveRecord::ConnectionAdapters::Athena::SchemaStatements do
 
     it "handles empty DESCRIBE result" do
       empty_result = { rows: [] }
+      allow(adapter).to receive(:schema_cache).and_return(nil)
       allow(adapter).to receive(:execute).with("DESCRIBE empty_table").and_return(empty_result)
       
       columns = adapter.columns("empty_table")
@@ -133,6 +136,7 @@ RSpec.describe ActiveRecord::ConnectionAdapters::Athena::SchemaStatements do
         ]
       }
       
+      allow(adapter).to receive(:schema_cache).and_return(nil)
       allow(adapter).to receive(:execute).with("DESCRIBE header_table").and_return(header_only_result)
       
       columns = adapter.columns("header_table")
