@@ -60,7 +60,7 @@ Due to the nature of AWS Athena, this adapter has several limitations:
 - **No primary keys**: Athena doesn't support primary key constraints.
 - **No foreign keys**: Athena doesn't support foreign key constraints.
 - **No indexes**: Athena doesn't support traditional indexes.
-- **Read-only operations**: This adapter is primarily designed for querying data, not for write operations.
+- **Limited write operations**: Traditional UPDATE/DELETE operations require Iceberg or Delta Lake table formats.
 
 ### Supported Operations
 
@@ -68,6 +68,9 @@ Due to the nature of AWS Athena, this adapter has several limitations:
 - `SHOW TABLES` - list all tables in the database
 - `DESCRIBE table` - get table schema information
 - `DROP TABLE` - remove external tables
+- `INSERT` statements - add new data to tables
+- `UPDATE` statements - limited support (requires Iceberg/Delta Lake tables)
+- `DELETE` statements - limited support (requires Iceberg/Delta Lake tables)
 
 ### AWS Configuration
 

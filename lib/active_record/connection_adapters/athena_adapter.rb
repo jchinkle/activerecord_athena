@@ -71,6 +71,14 @@ module ActiveRecord
         false
       end
 
+      def supports_transactions?
+        false
+      end
+
+      def supports_savepoints?
+        false
+      end
+
       def native_database_types
         {
           primary_key: "string",
@@ -138,6 +146,81 @@ module ActiveRecord
       def select_all(arel, name = nil, binds = [], **kwargs)
         sql = to_sql(arel, binds)
         exec_query(sql, name, binds)
+      end
+
+      def exec_update(sql, name = nil, binds = [])
+        # Athena doesn't support traditional UPDATE statements
+        # This is a limited implementation that will work for some use cases
+        log(sql, name) do
+          if sql.match?(/^UPDATE/i)
+            # Log a warning about UPDATE limitations
+            ActiveRecord::Base.logger&.warn("UPDATE operations in Athena are limited. Consider using INSERT OVERWRITE or MERGE operations instead.")
+            
+            # For now, we'll attempt to execute the UPDATE as-is
+            # This will likely fail unless using Iceberg/Delta Lake tables
+            prepared_sql = substitute_binds(sql, binds)
+            result = execute_query(prepared_sql)
+            
+            # Return number of affected rows (Athena doesn't provide this, so we return 0)
+            0
+          else
+            # Handle other modification queries
+            prepared_sql = substitute_binds(sql, binds)
+            execute_query(prepared_sql)
+            0
+          end
+        end
+      end
+
+      def exec_delete(sql, name = nil, binds = [])
+        # Athena doesn't support traditional DELETE statements
+        log(sql, name) do
+          if sql.match?(/^DELETE/i)
+            # Log a warning about DELETE limitations
+            ActiveRecord::Base.logger&.warn("DELETE operations in Athena are limited. Consider using INSERT OVERWRITE with filtered data instead.")
+            
+            # For now, we'll attempt to execute the DELETE as-is
+            # This will likely fail unless using Iceberg/Delta Lake tables
+            prepared_sql = substitute_binds(sql, binds)
+            result = execute_query(prepared_sql)
+            
+            # Return number of affected rows (Athena doesn't provide this, so we return 0)
+            0
+          else
+            # Handle other modification queries
+            prepared_sql = substitute_binds(sql, binds)
+            execute_query(prepared_sql)
+            0
+          end
+        end
+      end
+
+      def exec_insert(sql, name = nil, binds = [], pk = nil, sequence_name = nil, returning: nil)
+        # Athena supports INSERT statements
+        log(sql, name) do
+          prepared_sql = substitute_binds(sql, binds)
+          execute_query(prepared_sql)
+          
+          # Athena doesn't support returning generated IDs
+          # Return nil for the primary key value
+          nil
+        end
+      end
+
+      # Transaction methods (no-op for Athena)
+      def begin_db_transaction
+        # Athena doesn't support transactions
+        # This is a no-op to satisfy the interface
+      end
+
+      def commit_db_transaction
+        # Athena doesn't support transactions
+        # This is a no-op to satisfy the interface
+      end
+
+      def rollback_db_transaction
+        # Athena doesn't support transactions
+        # This is a no-op to satisfy the interface
       end
 
       private
