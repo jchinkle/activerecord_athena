@@ -122,6 +122,10 @@ module ActiveRecord
 
       def select_all(arel, name = nil, binds = [], **kwargs)
         sql = to_sql(arel, binds)
+        # Debug output
+        puts "DEBUG: SQL = #{sql}"
+        puts "DEBUG: binds = #{binds.inspect}"
+        puts "DEBUG: binds class = #{binds.class}"
         exec_query(sql, name, binds)
       end
 
@@ -142,20 +146,31 @@ module ActiveRecord
       def substitute_binds(sql, binds)
         return sql if binds.empty?
         
+        puts "DEBUG: substitute_binds called with sql=#{sql}, binds=#{binds.inspect}"
+        
         # Replace ? placeholders with actual values
         bind_index = 0
-        sql.gsub('?') do
+        result = sql.gsub('?') do
           if bind_index < binds.length
             bind = binds[bind_index]
             bind_index += 1
             
+            puts "DEBUG: Processing bind #{bind_index}: #{bind.inspect}"
+            
             # Handle different types of bind values
             value = bind.respond_to?(:value) ? bind.value : bind
-            quote(value)
+            puts "DEBUG: Extracted value: #{value.inspect}"
+            
+            quoted = quote(value)
+            puts "DEBUG: Quoted value: #{quoted}"
+            quoted
           else
             '?'
           end
         end
+        
+        puts "DEBUG: Final SQL: #{result}"
+        result
       end
 
       def quote(value)
