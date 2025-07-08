@@ -22,13 +22,15 @@ module ActiveRecord
             column_type = data[1][:var_char_value]
             
             sql_type = column_type
-            type = lookup_cast_type(sql_type)
+            type_metadata = ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(
+              sql_type: sql_type,
+              type: lookup_cast_type_symbol(sql_type)
+            )
             
             ConnectionAdapters::Column.new(
               column_name,
               nil, # default value
-              type,
-              sql_type,
+              type_metadata,
               true # nullable - Athena columns are typically nullable
             )
           end
@@ -92,6 +94,31 @@ module ActiveRecord
         end
 
         private
+
+        def lookup_cast_type_symbol(sql_type)
+          case sql_type.downcase
+          when /^string/i, /^varchar/i, /^char/i
+            :string
+          when /^bigint/i, /^int/i, /^tinyint/i, /^smallint/i
+            :integer
+          when /^double/i, /^float/i
+            :float
+          when /^decimal/i
+            :decimal
+          when /^boolean/i
+            :boolean
+          when /^timestamp/i, /^datetime/i
+            :datetime
+          when /^date/i
+            :date
+          when /^time/i
+            :time
+          when /^binary/i
+            :binary
+          else
+            :string
+          end
+        end
 
         def lookup_cast_type(sql_type)
           case sql_type.downcase
