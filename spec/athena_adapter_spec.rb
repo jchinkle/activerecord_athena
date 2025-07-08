@@ -68,14 +68,14 @@ RSpec.describe ActiveRecord::ConnectionAdapters::AthenaAdapter do
   end
 
   describe "#quote_column_name" do
-    it "wraps column names in backticks" do
-      expect(adapter.quote_column_name("test_column")).to eq("`test_column`")
+    it "wraps column names in double quotes" do
+      expect(adapter.quote_column_name("test_column")).to eq("\"test_column\"")
     end
   end
 
   describe "#quote_table_name" do
-    it "wraps table names in backticks" do
-      expect(adapter.quote_table_name("test_table")).to eq("`test_table`")
+    it "wraps table names in double quotes" do
+      expect(adapter.quote_table_name("test_table")).to eq("\"test_table\"")
     end
   end
 

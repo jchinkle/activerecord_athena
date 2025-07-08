@@ -82,11 +82,11 @@ module ActiveRecord
       end
 
       def quote_column_name(name)
-        "`#{name}`"
+        "\"#{name}\""
       end
 
       def quote_table_name(name)
-        "`#{name}`"
+        "\"#{name}\""
       end
 
       def quoted_true
