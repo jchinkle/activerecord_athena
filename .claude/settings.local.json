@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(bundle install:*)"
+      "Bash(bundle install:*)",
+      "Bash(bundle exec:*)"
     ],
     "deny": []
   }

@@ -111,9 +111,16 @@ module ActiveRecord
           
           if result[:rows].any?
             columns = result[:column_info].map { |col| col[:name] }
-            rows = result[:rows].map { |row| row[:data].map { |cell| cell[:var_char_value] } }
+            raw_rows = result[:rows].map { |row| row[:data].map { |cell| cell[:var_char_value] } }
             
-            ActiveRecord::Result.new(columns, rows)
+            # Filter out header row if it matches column names
+            # The first row is often the header row in Athena results
+            data_rows = raw_rows
+            if raw_rows.first && raw_rows.first == columns
+              data_rows = raw_rows.drop(1)
+            end
+            
+            ActiveRecord::Result.new(columns, data_rows)
           else
             ActiveRecord::Result.new([], [])
           end

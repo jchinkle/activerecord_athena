@@ -8,6 +8,22 @@ module ActiveRecord
           result[:rows].map { |row| row[:data].first[:var_char_value] }
         end
 
+        def data_sources
+          tables
+        end
+
+        def data_source_sql(name = nil, type: nil)
+          if name
+            "SHOW TABLES LIKE '#{name}'"
+          else
+            "SHOW TABLES"
+          end
+        end
+
+        def data_source_exists?(name)
+          tables.include?(name.to_s)
+        end
+
         def table_exists?(table_name)
           tables.include?(table_name.to_s)
         end

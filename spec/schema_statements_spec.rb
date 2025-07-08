@@ -139,4 +139,46 @@ RSpec.describe ActiveRecord::ConnectionAdapters::Athena::SchemaStatements do
       expect(columns).to eq([])
     end
   end
+
+  describe "#data_sources" do
+    it "returns same as tables" do
+      mock_result = {
+        rows: [
+          { data: [{ var_char_value: "table1" }] },
+          { data: [{ var_char_value: "table2" }] }
+        ]
+      }
+      allow(adapter).to receive(:execute).with("SHOW TABLES").and_return(mock_result)
+      
+      expect(adapter.data_sources).to eq(["table1", "table2"])
+    end
+  end
+
+  describe "#data_source_sql" do
+    it "returns SHOW TABLES when no name provided" do
+      expect(adapter.data_source_sql).to eq("SHOW TABLES")
+    end
+
+    it "returns SHOW TABLES LIKE when name provided" do
+      expect(adapter.data_source_sql("test_table")).to eq("SHOW TABLES LIKE 'test_table'")
+    end
+  end
+
+  describe "#data_source_exists?" do
+    it "returns true if table exists" do
+      allow(adapter).to receive(:tables).and_return(["table1", "table2"])
+      
+      expect(adapter.data_source_exists?("table1")).to be true
+      expect(adapter.data_source_exists?("table3")).to be false
+    end
+  end
+
+  describe "#table_exists?" do
+    it "returns true if table exists" do
+      allow(adapter).to receive(:tables).and_return(["table1", "table2"])
+      
+      expect(adapter.table_exists?("table1")).to be true
+      expect(adapter.table_exists?("table3")).to be false
+    end
+  end
 end

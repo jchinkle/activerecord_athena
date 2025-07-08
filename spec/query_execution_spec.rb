@@ -153,4 +153,63 @@ RSpec.describe "Query Execution" do
       adapter.send(:s3_client)
     end
   end
+
+  describe "#exec_query" do
+    it "filters out header row when it matches column names" do
+      # Mock Athena query result with header row
+      athena_result = {
+        column_info: [
+          { name: "id" },
+          { name: "name" }
+        ],
+        rows: [
+          { data: [{ var_char_value: "id" }, { var_char_value: "name" }] }, # header row
+          { data: [{ var_char_value: "1" }, { var_char_value: "John" }] },  # data row
+          { data: [{ var_char_value: "2" }, { var_char_value: "Jane" }] }   # data row
+        ]
+      }
+      
+      allow(adapter).to receive(:execute_query).and_return(athena_result)
+      
+      result = adapter.exec_query("SELECT * FROM users")
+      
+      expect(result.columns).to eq(["id", "name"])
+      expect(result.rows).to eq([["1", "John"], ["2", "Jane"]])
+    end
+
+    it "keeps all rows when first row doesn't match column names" do
+      # Mock Athena query result without header row
+      athena_result = {
+        column_info: [
+          { name: "id" },
+          { name: "name" }
+        ],
+        rows: [
+          { data: [{ var_char_value: "1" }, { var_char_value: "John" }] },  # data row
+          { data: [{ var_char_value: "2" }, { var_char_value: "Jane" }] }   # data row
+        ]
+      }
+      
+      allow(adapter).to receive(:execute_query).and_return(athena_result)
+      
+      result = adapter.exec_query("SELECT * FROM users")
+      
+      expect(result.columns).to eq(["id", "name"])
+      expect(result.rows).to eq([["1", "John"], ["2", "Jane"]])
+    end
+
+    it "handles empty result set" do
+      athena_result = {
+        column_info: [],
+        rows: []
+      }
+      
+      allow(adapter).to receive(:execute_query).and_return(athena_result)
+      
+      result = adapter.exec_query("SELECT * FROM empty_table")
+      
+      expect(result.columns).to eq([])
+      expect(result.rows).to eq([])
+    end
+  end
 end
