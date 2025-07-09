@@ -155,12 +155,12 @@ module ActiveRecord
           if sql.match?(/^UPDATE/i)
             # Log a warning about UPDATE limitations
             ActiveRecord::Base.logger&.warn("UPDATE operations in Athena are limited. Consider using INSERT OVERWRITE or MERGE operations instead.")
-            
+
             # For now, we'll attempt to execute the UPDATE as-is
             # This will likely fail unless using Iceberg/Delta Lake tables
             prepared_sql = substitute_binds(sql, binds)
             result = execute_query(prepared_sql)
-            
+
             # Return number of affected rows (Athena doesn't provide this, so we return 0)
             0
           else
@@ -178,12 +178,12 @@ module ActiveRecord
           if sql.match?(/^DELETE/i)
             # Log a warning about DELETE limitations
             ActiveRecord::Base.logger&.warn("DELETE operations in Athena are limited. Consider using INSERT OVERWRITE with filtered data instead.")
-            
+
             # For now, we'll attempt to execute the DELETE as-is
             # This will likely fail unless using Iceberg/Delta Lake tables
             prepared_sql = substitute_binds(sql, binds)
             result = execute_query(prepared_sql)
-            
+
             # Return number of affected rows (Athena doesn't provide this, so we return 0)
             0
           else
@@ -200,7 +200,7 @@ module ActiveRecord
         log(sql, name) do
           prepared_sql = substitute_binds(sql, binds)
           execute_query(prepared_sql)
-          
+
           # Athena doesn't support returning generated IDs
           # Return nil for the primary key value
           nil
